@@ -1,6 +1,6 @@
 import streamlit as st
 import math
-
+import io
 # CONFIG
 PALLET_LARGO = 120
 PALLET_ANCHO = 100
@@ -208,7 +208,6 @@ st.write(recomendacion)
     # ==============================
     # PDF CORREGIDO
     # ==============================
-    import io
     from datetime import datetime
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
     from reportlab.lib import colors
