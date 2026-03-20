@@ -1,7 +1,14 @@
 import streamlit as st
 import math
 import io
+from datetime import datetime
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
+# ==============================
 # CONFIG
+# ==============================
 PALLET_LARGO = 120
 PALLET_ANCHO = 100
 PALLET_ALTURA_MAX = 180
@@ -18,7 +25,6 @@ ALTURA_CONTENEDOR = 260
 # ==============================
 # LOGICA
 # ==============================
-
 def rotaciones(l, a, h):
     return [
         (l, a, h), (a, l, h), (l, h, a),
@@ -93,8 +99,7 @@ def calcular_contenedores(total_pallets, vol):
 # ==============================
 # UI
 # ==============================
-
-st.set_page_config(page_title="Calculadora Logística", layout="wide")
+st.set_page_config(layout="wide")
 st.title("📦 CALCULADORA LOGÍSTICA RUUFE")
 
 try:
@@ -102,7 +107,7 @@ try:
 except:
     pass
 
-# NUEVO: CLIENTE
+# CLIENTE
 st.subheader("🧾 Información cliente (opcional)")
 cliente = st.text_input("Nombre del cliente")
 destino = st.text_input("País destino")
@@ -116,12 +121,9 @@ for i in range(int(num_productos)):
 
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        largo = st.number_input(f"Largo cm {i}", key=f"l{i}")
-    with col2:
-        ancho = st.number_input(f"Ancho cm {i}", key=f"a{i}")
-    with col3:
-        alto = st.number_input(f"Alto cm {i}", key=f"h{i}")
+    largo = col1.number_input(f"Largo cm {i}", key=f"l{i}")
+    ancho = col2.number_input(f"Ancho cm {i}", key=f"a{i}")
+    alto = col3.number_input(f"Alto cm {i}", key=f"h{i}")
 
     peso = st.number_input(f"Peso kg {i}", key=f"p{i}")
     cantidad = st.number_input(f"Cantidad {i}", key=f"c{i}")
@@ -134,10 +136,27 @@ for i in range(int(num_productos)):
         'cantidad': cantidad
     })
 
-if st.button("🔄 Limpiar y nueva simulación"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
+# ==============================
+# BOTONES
+# ==============================
+colA, colB = st.columns(2)
+
+calcular = colA.button("Calcular")
+limpiar = colB.button("🔄 Limpiar y nueva simulación")
+
+if limpiar:
+    st.session_state.clear()
     st.rerun()
+
+# ==============================
+# CALCULO
+# ==============================
+if calcular:
+
+    total_vol = 0
+    total_peso = 0
+    total_pallets = 0
+    resultados = []
 
     st.header("📊 Resultados por tipo de caja")
 
@@ -161,63 +180,44 @@ if st.button("🔄 Limpiar y nueva simulación"):
 
     c20, c40, occ20, occ40, doble = calcular_contenedores(total_pallets, total_vol)
 
-# ==============================
-# REPORTE LOGISTICO FINAL
-# ==============================
+    # ==============================
+    # REPORTE FINAL
+    # ==============================
+    st.header("🚢 REPORTE LOGÍSTICO FINAL")
 
-st.header("🚢 REPORTE LOGÍSTICO FINAL")
+    st.write(f"📦 Total cajas: {sum([p['cantidad'] for p in productos])}")
+    st.write(f"🧱 Total pallets: {total_pallets}")
+    st.write(f"⚖️ Peso total: {round(total_peso,2)} kg")
+    st.write(f"📐 Volumen total: {round(total_vol,2)} m3")
 
-st.write(f"📦 Total de cajas: {sum([p['cantidad'] for p in productos])}")
-st.write(f"🧱 Total pallets: {total_pallets}")
-st.write(f"⚖️ Peso total: {round(total_peso,2)} kg")
-st.write(f"📐 Volumen total: {round(total_vol,2)} m3")
+    st.write(f"20ft: {c20} | Ocupación: {round(occ20*100,1)}%")
+    st.write(f"40ft: {c40} | Ocupación: {round(occ40*100,1)}%")
 
-st.subheader("📦 Distribución por pallet")
-
-for i, (p, r) in enumerate(resultados):
-    st.write(f"Tipo de caja {i+1}:")
-    st.write(f"- Cajas por pallet: {r['cajas_pallet']}")
-    st.write(f"- Peso por pallet: {round(r['peso_pallet'],2)} kg")
-    st.write(f"- Pallets: {r['pallets']}")
-
-st.subheader("🚢 Contenedores")
-
-st.write(f"20ft necesarios: {c20} | Ocupación: {round(occ20*100,1)}%")
-st.write(f"40ft necesarios: {c40} | Ocupación: {round(occ40*100,1)}%")
-
-if doble:
-    st.success("📦 Apilación de pallets: Permitida")
-else:
-    st.error("📦 Apilación de pallets: No permitida por límite de altura")
-
-# ==============================
-# RECOMENDACIÓN
-# ==============================
-
-st.header("🧠 RECOMENDACIÓN FINAL")
-
-if total_pallets <= 5:
-    recomendacion = "Para este pedido es recomendable consolidar carga (LCL)"
-elif occ40 < 0.6:
-    recomendacion = "Baja ocupación: considerar consolidación o envío parcial"
-else:
-    recomendacion = "Envío óptimo en contenedor completo (FCL)"
-
-st.write(recomendacion)
+    if doble:
+        st.success("📦 Apilación de pallets: Permitida")
+    else:
+        st.error("📦 Apilación de pallets: No permitida por límite de altura")
 
     # ==============================
-    # PDF CORREGIDO
+    # RECOMENDACION
     # ==============================
-from datetime import datetime
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+    if total_pallets <= 5:
+        recomendacion = "Consolidar carga (LCL)"
+    elif occ40 < 0.6:
+        recomendacion = "Baja ocupación, considerar consolidación"
+    else:
+        recomendacion = "Envío FCL óptimo"
 
-buffer = io.BytesIO()
-doc = SimpleDocTemplate(buffer)
-styles = getSampleStyleSheet()
+    st.write(recomendacion)
 
-contenido = []
+    # ==============================
+    # PDF
+    # ==============================
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+
+    contenido = []
 
     try:
         contenido.append(Image("logo.png", width=140, height=60))
@@ -231,29 +231,25 @@ contenido = []
     fecha = datetime.now().strftime("%d/%m/%Y")
 
     contenido.append(Paragraph(f"Fecha: {fecha}", styles['Normal']))
-    contenido.append(Paragraph(f"Cliente: {cliente if cliente else '__________'}", styles['Normal']))
-    contenido.append(Paragraph(f"Destino: {destino if destino else '__________'}", styles['Normal']))
+    contenido.append(Paragraph(f"Cliente: {cliente if cliente else '________'}", styles['Normal']))
+    contenido.append(Paragraph(f"Destino: {destino if destino else '________'}", styles['Normal']))
 
     contenido.append(Spacer(1, 15))
-
-    estilo = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.orange),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black)
-    ])
-
-    ancho = [260, 140]
 
     data = [
         ["Concepto", "Valor"],
         ["Total pallets", total_pallets],
-        ["Volumen total", round(total_vol,2)],
-        ["Peso total", round(total_peso,2)],
+        ["Volumen", round(total_vol,2)],
+        ["Peso", round(total_peso,2)],
         ["Ocupación 40ft", f"{round(occ40*100,1)}%"]
     ]
 
-    tabla = Table(data, colWidths=ancho)
-    tabla.setStyle(estilo)
+    tabla = Table(data, colWidths=[260, 140])
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.orange),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black)
+    ]))
 
     contenido.append(tabla)
 
@@ -261,8 +257,3 @@ contenido = []
     pdf = buffer.getvalue()
 
     st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
-
-# LIMPIAR
-if st.button("🔄 Limpiar"):
-    st.session_state.clear()
-    st.rerun()
