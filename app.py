@@ -294,7 +294,13 @@ if calcular:
 st.markdown("---")
 
 if st.button("🔄 Limpiar y nueva simulación"):
-      st.session_state.clear()
-      st.session_state.reset = True
-      st.rerun()
+    for key in list(st.session_state.keys()):
+        if key.startswith(("l", "a", "h", "p", "c")):
+            st.session_state[key] = 0
+
+     st.session_state["cliente"] = ""
+     st.session_state["destino"] = ""
+     st.session_state["num_productos"] = 1
+
+     st.rerun()
   
