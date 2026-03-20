@@ -294,13 +294,13 @@ if calcular:
 st.markdown("---")
 
 if st.button("🔄 Limpiar y nueva simulación"):
-    for key in list(st.session_state.keys()):
-        if key.startswith(("l", "a", "h", "p", "c")):
-            st.session_state[key] = 0
+    keys_to_delete = []
 
-    st.session_state["cliente"] = ""
-    st.session_state["destino"] = ""
-    st.session_state["num_productos"] = 1
+    for key in st.session_state.keys():
+        if key.startswith(("l", "a", "h", "p", "c")) or key in ["cliente", "destino", "num_productos"]:
+            keys_to_delete.append(key)
+
+    for key in keys_to_delete:
+        del st.session_state[key]
 
     st.rerun()
-  
