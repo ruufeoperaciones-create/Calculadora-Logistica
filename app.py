@@ -1,147 +1,173 @@
 import streamlit as st
 import math
-from datetime import datetime
 
-# ==============================
 # CONFIG
-# ==============================
-st.set_page_config(layout="wide")
+PALLET_LARGO = 120
+PALLET_ANCHO = 100
+PALLET_ALTURA_MAX = 180
+ALTURA_PALLET = 15
+PESO_MAX_PALLET = 1000
 
+CBM_20 = 33
+CBM_40 = 67
+
+PALLETS_20 = 11
+PALLETS_40 = 22
+ALTURA_CONTENEDOR = 260
+
+# ==============================
+# LOGICA
+# ==============================
+
+def rotaciones(l, a, h):
+    return [
+        (l, a, h), (a, l, h), (l, h, a),
+        (h, l, a), (a, h, l), (h, a, l)
+    ]
+
+def mejor_config(p):
+    opciones = []
+
+    for (l, a, h) in rotaciones(p['largo'], p['ancho'], p['alto']):
+        por_fila = int(PALLET_LARGO / l)
+        por_col = int(PALLET_ANCHO / a)
+
+        if por_fila == 0 or por_col == 0:
+            continue
+
+        base = por_fila * por_col
+        altura_disp = PALLET_ALTURA_MAX - ALTURA_PALLET
+        capas = int(altura_disp / h)
+
+        if capas == 0:
+            continue
+
+        cajas_pallet = base * capas
+
+        if cajas_pallet * p['peso'] > PESO_MAX_PALLET:
+            cajas_pallet = int(PESO_MAX_PALLET / p['peso'])
+
+        if cajas_pallet <= 0:
+            continue
+
+        opciones.append({
+            'orientacion': (l, a, h),
+            'cajas_pallet': cajas_pallet
+        })
+
+    mejor = max(opciones, key=lambda x: x['cajas_pallet'])
+    return mejor, opciones
+
+def calcular_producto(p):
+    mejor, opciones = mejor_config(p)
+
+    cajas_pallet = mejor['cajas_pallet']
+    pallets = math.ceil(p['cantidad'] / cajas_pallet)
+
+    vol_caja = (p['largo'] * p['ancho'] * p['alto']) / 1_000_000
+    vol_pallet = cajas_pallet * vol_caja
+    peso_pallet = cajas_pallet * p['peso']
+
+    return {
+        'pallets': pallets,
+        'cajas_pallet': cajas_pallet,
+        'vol_pallet': vol_pallet,
+        'peso_pallet': peso_pallet,
+        'opciones': opciones
+    }
+
+def calcular_contenedores(total_pallets, vol):
+    doble = (PALLET_ALTURA_MAX * 2) <= ALTURA_CONTENEDOR
+
+    cap_20 = PALLETS_20 * (2 if doble else 1)
+    cap_40 = PALLETS_40 * (2 if doble else 1)
+
+    c20 = math.ceil(total_pallets / cap_20)
+    c40 = math.ceil(total_pallets / cap_40)
+
+    occ20 = vol / (c20 * CBM_20) if c20 else 0
+    occ40 = vol / (c40 * CBM_40) if c40 else 0
+
+    return c20, c40, occ20, occ40, doble
+
+# ==============================
+# UI
+# ==============================
+
+st.set_page_config(page_title="Calculadora Logística", layout="wide")
 st.title("📦 CALCULADORA LOGÍSTICA RUUFE")
 
-# LOGO
 try:
     st.image("logo.png", width=200)
 except:
     pass
 
-# ==============================
-# INPUT CLIENTE
-# ==============================
-st.subheader("🧾 Información del cliente (opcional)")
+# NUEVO: CLIENTE
+st.subheader("🧾 Información cliente (opcional)")
 cliente = st.text_input("Nombre del cliente")
 destino = st.text_input("País destino")
 
-st.divider()
-
-# ==============================
-# INPUT GENERAL
-# ==============================
-num_tipos = st.number_input("¿Cuántos tipos de caja?", min_value=1, step=1)
+num_productos = st.number_input("Número de tipos de cajas", min_value=1, step=1)
 
 productos = []
 
-for i in range(num_tipos):
+for i in range(int(num_productos)):
     st.subheader(f"Tipo de caja {i+1}")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    largo = col1.number_input(f"Largo (cm) - Caja {i+1}", key=f"l{i}")
-    ancho = col2.number_input(f"Ancho (cm) - Caja {i+1}", key=f"a{i}")
-    alto = col3.number_input(f"Alto (cm) - Caja {i+1}", key=f"h{i}")
-    peso = col4.number_input(f"Peso (kg) - Caja {i+1}", key=f"p{i}")
-    
-    cantidad = st.number_input(f"Cantidad de cajas - Tipo {i+1}", key=f"c{i}")
-    
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        largo = st.number_input(f"Largo cm {i}", key=f"l{i}")
+    with col2:
+        ancho = st.number_input(f"Ancho cm {i}", key=f"a{i}")
+    with col3:
+        alto = st.number_input(f"Alto cm {i}", key=f"h{i}")
+
+    peso = st.number_input(f"Peso kg {i}", key=f"p{i}")
+    cantidad = st.number_input(f"Cantidad {i}", key=f"c{i}")
+
     productos.append({
-        "l": largo/100,
-        "a": ancho/100,
-        "h": alto/100,
-        "peso": peso,
-        "cantidad": cantidad
+        'largo': largo,
+        'ancho': ancho,
+        'alto': alto,
+        'peso': peso,
+        'cantidad': cantidad
     })
 
-# ==============================
-# PARÁMETROS PALLET
-# ==============================
-st.subheader("📦 Parámetros pallet")
-
-colp1, colp2, colp3 = st.columns(3)
-pallet_l = colp1.number_input("Largo pallet (m)", value=1.2)
-pallet_a = colp2.number_input("Ancho pallet (m)", value=1.0)
-pallet_h_max = colp3.number_input("Altura máxima (m)", value=2.2)
-
-peso_max_pallet = st.number_input("Peso máximo por pallet (kg)", value=1000)
-
-# ==============================
-# BOTÓN CALCULAR
-# ==============================
 if st.button("Calcular"):
 
-    resultados = []
-    total_pallets = 0
     total_vol = 0
     total_peso = 0
+    total_pallets = 0
 
-    for p in productos:
+    resultados = []
 
-        # ROTACIONES
-        rotaciones = [
-            (p["l"], p["a"], p["h"]),
-            (p["a"], p["l"], p["h"]),
-            (p["h"], p["a"], p["l"])
-        ]
+    st.header("📊 Resultados por tipo de caja")
 
-        mejor = None
-        max_cajas = 0
+    for i, p in enumerate(productos):
+        r = calcular_producto(p)
+        resultados.append((p, r))
 
-        for r in rotaciones:
-            cajas_base = math.floor(pallet_l / r[0]) * math.floor(pallet_a / r[1])
-            alturas = math.floor(pallet_h_max / r[2])
-            total = cajas_base * alturas
+        total_pallets += r['pallets']
+        total_vol += (p['largo'] * p['ancho'] * p['alto'] / 1_000_000) * p['cantidad']
+        total_peso += p['peso'] * p['cantidad']
 
-            if total > max_cajas:
-                max_cajas = total
-                mejor = r
+        st.subheader(f"Tipo de caja {i+1}")
 
-        cajas_pallet = max_cajas if max_cajas > 0 else 1
+        for op in r['opciones']:
+            st.write(f"{op['orientacion']} → {op['cajas_pallet']} cajas/pallet")
 
-        pallets = math.ceil(p["cantidad"] / cajas_pallet)
+        st.write(f"Cajas por pallet: {r['cajas_pallet']}")
+        st.write(f"Pallets: {r['pallets']}")
+        st.write(f"Volumen pallet: {round(r['vol_pallet'],2)} m3")
+        st.write(f"Peso pallet: {round(r['peso_pallet'],2)} kg")
 
-        peso_pallet = cajas_pallet * p["peso"]
+    c20, c40, occ20, occ40, doble = calcular_contenedores(total_pallets, total_vol)
 
-        if peso_pallet > peso_max_pallet:
-            cajas_pallet = math.floor(peso_max_pallet / p["peso"])
-            pallets = math.ceil(p["cantidad"] / cajas_pallet)
+    st.header("🚢 Logística total")
 
-        vol_pallet = pallet_l * pallet_a * pallet_h_max
-
-        total_pallets += pallets
-        total_vol += vol_pallet * pallets
-        total_peso += p["peso"] * p["cantidad"]
-
-        resultados.append({
-            "cajas_pallet": cajas_pallet,
-            "pallets": pallets,
-            "vol_pallet": vol_pallet,
-            "peso_pallet": peso_pallet
-        })
-
-    # ==============================
-    # CONTENEDORES
-    # ==============================
-    pallets_20 = 10
-    pallets_40 = 21
-
-    c20 = math.ceil(total_pallets / pallets_20)
-    c40 = math.ceil(total_pallets / pallets_40)
-
-    occ20 = total_pallets / (c20 * pallets_20) if c20 else 0
-    occ40 = total_pallets / (c40 * pallets_40) if c40 else 0
-
-    doble = pallet_h_max < 1.2
-
-    # ==============================
-    # RESULTADOS
-    # ==============================
-    st.subheader("📊 Resultados")
-
-    st.write(f"Total pallets: {total_pallets}")
-    st.write(f"Volumen total: {round(total_vol,2)} m3")
-    st.write(f"Peso total: {round(total_peso,2)} kg")
-
-    st.write(f"Contenedor 20ft: {c20}")
-    st.write(f"Contenedor 40ft: {c40}")
+    st.write(f"20ft: {c20} | Ocupación: {round(occ20*100,1)}%")
+    st.write(f"40ft: {c40} | Ocupación: {round(occ40*100,1)}%")
 
     if doble:
         st.success("📦 Apilación de pallets: Permitida")
@@ -149,22 +175,10 @@ if st.button("Calcular"):
         st.error("📦 Apilación de pallets: No permitida por límite de altura")
 
     # ==============================
-    # RECOMENDACIÓN
-    # ==============================
-    if total_pallets <= 5:
-        recomendacion = "Consolidar carga (LCL)"
-    elif occ40 < 0.6:
-        recomendacion = "Baja ocupación, considerar consolidación"
-    else:
-        recomendacion = "Envío FCL óptimo"
-
-    st.subheader("🧠 Recomendación")
-    st.write(recomendacion)
-
-    # ==============================
-    # PDF
+    # PDF CORREGIDO
     # ==============================
     import io
+    from datetime import datetime
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
@@ -187,8 +201,8 @@ if st.button("Calcular"):
     fecha = datetime.now().strftime("%d/%m/%Y")
 
     contenido.append(Paragraph(f"Fecha: {fecha}", styles['Normal']))
-    contenido.append(Paragraph(f"Cliente: {cliente if cliente else '________________'}", styles['Normal']))
-    contenido.append(Paragraph(f"Destino: {destino if destino else '________________'}", styles['Normal']))
+    contenido.append(Paragraph(f"Cliente: {cliente if cliente else '__________'}", styles['Normal']))
+    contenido.append(Paragraph(f"Destino: {destino if destino else '__________'}", styles['Normal']))
 
     contenido.append(Spacer(1, 15))
 
@@ -200,19 +214,12 @@ if st.button("Calcular"):
 
     ancho = [260, 140]
 
-    # TABLA RESUMEN
-    contenido.append(Paragraph("<b>Resumen logístico</b>", styles['Heading2']))
-    contenido.append(Spacer(1, 8))
-
     data = [
         ["Concepto", "Valor"],
         ["Total pallets", total_pallets],
         ["Volumen total", round(total_vol,2)],
         ["Peso total", round(total_peso,2)],
-        ["Contenedor 20ft", c20],
-        ["Contenedor 40ft", c40],
-        ["Ocupación 40ft (%)", f"{round(occ40*100,1)}%"],
-        ["Apilación", "Permitida" if doble else "No permitida"]
+        ["Ocupación 40ft", f"{round(occ40*100,1)}%"]
     ]
 
     tabla = Table(data, colWidths=ancho)
@@ -220,26 +227,12 @@ if st.button("Calcular"):
 
     contenido.append(tabla)
 
-    contenido.append(Spacer(1, 15))
-
-    contenido.append(Paragraph(f"<b>Recomendación:</b> {recomendacion}", styles['Normal']))
-
     doc.build(contenido)
-
     pdf = buffer.getvalue()
-    buffer.close()
 
-    st.download_button(
-        label="📄 Exportar reporte en PDF",
-        data=pdf,
-        file_name="cotizacion_logistica_ruufe.pdf",
-        mime="application/pdf"
-    )
+    st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
 
-# ==============================
 # LIMPIAR
-# ==============================
-if st.button("🔄 Limpiar y nueva simulación"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.experimental_rerun()
+if st.button("🔄 Limpiar"):
+    st.session_state.clear()
+    st.rerun()
