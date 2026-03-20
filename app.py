@@ -6,6 +6,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
+if "reset" not in st.session_state:
+    st.session_state.reset = False
+
 # ==============================
 # CONFIG
 # ==============================
@@ -109,10 +112,24 @@ except:
 
 # CLIENTE
 st.subheader("🧾 Información cliente (opcional)")
-cliente = st.text_input("Nombre del cliente")
-destino = st.text_input("País destino")
+cliente = st.text_input(
+    "Nombre del cliente",
+    value="" if st.session_state.reset else st.session_state.get("cliente", "")
+)
+st.session_state.cliente = cliente
+destino = st.text_input(
+    "País destino",
+    value="" if st.session_state.reset else st.session_state.get("destino", "")
+)
+st.session_state.destino = destino
 
-num_productos = st.number_input("Número de tipos de cajas", min_value=1, step=1)
+num_productos = st.number_input(
+    "Número de tipos de cajas",
+    min_value=1,
+    step=1,
+    value=1 if st.session_state.reset else st.session_state.get("num_productos", 1)
+)
+st.session_state.num_productos = num_productos
 
 productos = []
 
@@ -121,12 +138,32 @@ for i in range(int(num_productos)):
 
     col1, col2, col3 = st.columns(3)
 
-    largo = col1.number_input(f"Largo cm {i}", key=f"l{i}")
-    ancho = col2.number_input(f"Ancho cm {i}", key=f"a{i}")
-    alto = col3.number_input(f"Alto cm {i}", key=f"h{i}")
+    largo = col1.number_input(
+    f"Largo cm {i}",
+    key=f"l{i}",
+    value=0 if st.session_state.reset else st.session_state.get(f"l{i}", 0)
+)
+    ancho = col2.number_input(
+    f"Ancho cm {i}",
+    key=f"a{i}",
+    value=0 if st.session_state.reset else st.session_state.get(f"a{i}", 0)
+)
+    alto = col3.number_input(
+    f"Alto cm {i}",
+    key=f"h{i}",
+    value=0 if st.session_state.reset else st.session_state.get(f"h{i}", 0)
+)
 
-    peso = st.number_input(f"Peso kg {i}", key=f"p{i}")
-    cantidad = st.number_input(f"Cantidad {i}", key=f"c{i}")
+    peso = st.number_input(
+    f"Peso kg {i}",
+    key=f"p{i}",
+    value=0 if st.session_state.reset else st.session_state.get(f"p{i}", 0)
+)
+    cantidad = st.number_input(
+    f"Cantidad {i}",
+    key=f"c{i}",
+    value=0 if st.session_state.reset else st.session_state.get(f"c{i}", 0)
+)
 
     productos.append({
         'largo': largo,
@@ -254,7 +291,10 @@ if calcular:
     st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
     st.markdown("---")
 
+st.markdown("---")
+
 if st.button("🔄 Limpiar y nueva simulación"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+      st.session_state.clear()
+      st.session_state.reset = True
+      st.rerun()
+  
