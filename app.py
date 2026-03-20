@@ -217,7 +217,7 @@ buffer = io.BytesIO()
 doc = SimpleDocTemplate(buffer)
 styles = getSampleStyleSheet()
 
-    contenido = []
+contenido = []
 
     try:
         contenido.append(Image("logo.png", width=140, height=60))
