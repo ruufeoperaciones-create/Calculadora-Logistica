@@ -134,13 +134,10 @@ for i in range(int(num_productos)):
         'cantidad': cantidad
     })
 
-if st.button("Calcular"):
-
-    total_vol = 0
-    total_peso = 0
-    total_pallets = 0
-
-    resultados = []
+if st.button("🔄 Limpiar y nueva simulación"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
     st.header("📊 Resultados por tipo de caja")
 
@@ -164,15 +161,49 @@ if st.button("Calcular"):
 
     c20, c40, occ20, occ40, doble = calcular_contenedores(total_pallets, total_vol)
 
-    st.header("🚢 Logística total")
+# ==============================
+# REPORTE LOGISTICO FINAL
+# ==============================
 
-    st.write(f"20ft: {c20} | Ocupación: {round(occ20*100,1)}%")
-    st.write(f"40ft: {c40} | Ocupación: {round(occ40*100,1)}%")
+st.header("🚢 REPORTE LOGÍSTICO FINAL")
 
-    if doble:
-        st.success("📦 Apilación de pallets: Permitida")
-    else:
-        st.error("📦 Apilación de pallets: No permitida por límite de altura")
+st.write(f"📦 Total de cajas: {sum([p['cantidad'] for p in productos])}")
+st.write(f"🧱 Total pallets: {total_pallets}")
+st.write(f"⚖️ Peso total: {round(total_peso,2)} kg")
+st.write(f"📐 Volumen total: {round(total_vol,2)} m3")
+
+st.subheader("📦 Distribución por pallet")
+
+for i, (p, r) in enumerate(resultados):
+    st.write(f"Tipo de caja {i+1}:")
+    st.write(f"- Cajas por pallet: {r['cajas_pallet']}")
+    st.write(f"- Peso por pallet: {round(r['peso_pallet'],2)} kg")
+    st.write(f"- Pallets: {r['pallets']}")
+
+st.subheader("🚢 Contenedores")
+
+st.write(f"20ft necesarios: {c20} | Ocupación: {round(occ20*100,1)}%")
+st.write(f"40ft necesarios: {c40} | Ocupación: {round(occ40*100,1)}%")
+
+if doble:
+    st.success("📦 Apilación de pallets: Permitida")
+else:
+    st.error("📦 Apilación de pallets: No permitida por límite de altura")
+
+# ==============================
+# RECOMENDACIÓN
+# ==============================
+
+st.header("🧠 RECOMENDACIÓN FINAL")
+
+if total_pallets <= 5:
+    recomendacion = "Para este pedido es recomendable consolidar carga (LCL)"
+elif occ40 < 0.6:
+    recomendacion = "Baja ocupación: considerar consolidación o envío parcial"
+else:
+    recomendacion = "Envío óptimo en contenedor completo (FCL)"
+
+st.write(recomendacion)
 
     # ==============================
     # PDF CORREGIDO
