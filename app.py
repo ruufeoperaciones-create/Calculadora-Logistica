@@ -208,10 +208,10 @@ st.write(recomendacion)
     # ==============================
     # PDF CORREGIDO
     # ==============================
-    from datetime import datetime
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
