@@ -298,9 +298,9 @@ if st.button("🔄 Limpiar y nueva simulación"):
         if key.startswith(("l", "a", "h", "p", "c")):
             st.session_state[key] = 0
 
-     st.session_state["cliente"] = ""
-     st.session_state["destino"] = ""
-     st.session_state["num_productos"] = 1
+    st.session_state["cliente"] = ""
+    st.session_state["destino"] = ""
+    st.session_state["num_productos"] = 1
 
-     st.rerun()
+    st.rerun()
   
