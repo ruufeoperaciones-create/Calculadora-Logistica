@@ -137,16 +137,11 @@ for i in range(int(num_productos)):
     })
 
 # ==============================
-# BOTONES
+# BOTON CALCULAR
 # ==============================
-colA, colB = st.columns(2)
 
-calcular = colA.button("Calcular")
-limpiar = colB.button("🔄 Limpiar y nueva simulación")
+calcular = st.button("Calcular")
 
-if limpiar:
-    st.session_state.clear()
-    st.rerun()
 
 # ==============================
 # CALCULO
@@ -257,3 +252,9 @@ if calcular:
     pdf = buffer.getvalue()
 
     st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
+    st.markdown("---")
+
+if st.button("🔄 Limpiar y nueva simulación"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
