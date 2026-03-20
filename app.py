@@ -213,9 +213,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-    styles = getSampleStyleSheet()
+buffer = io.BytesIO()
+doc = SimpleDocTemplate(buffer)
+styles = getSampleStyleSheet()
 
     contenido = []
 
