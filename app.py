@@ -227,7 +227,7 @@ if calcular:
     st.success(recomendacion)
 
     # ==============================
-    # PDF
+    # PDF PROFESIONAL
     # ==============================
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
@@ -235,36 +235,132 @@ if calcular:
 
     contenido = []
 
-    contenido.append(Paragraph("<b>COTIZACIÓN DE EMBARQUE LOGÍSTICO</b>", styles['Title']))
+    # ==============================
+    # LOGO
+    # ==============================
+    try:
+     contenido.append(Image("logo.png", width=160, height=70))
+    except:
+     pass
 
+     contenido.append(Spacer(1, 10))
+
+    # ==============================
+    # TITULO
+    # ==============================
+     contenido.append(Paragraph("<b>COTIZACIÓN DE EMBARQUE LOGÍSTICO</b>", styles['Title']))
+     contenido.append(Spacer(1, 10))
+
+    # ==============================
+    # INFO GENERAL
+    # ==============================
     fecha = datetime.now().strftime("%d/%m/%Y")
 
-    contenido.append(Paragraph(f"Fecha: {fecha}", styles['Normal']))
-    contenido.append(Paragraph(f"Cliente: {cliente if cliente else '________'}", styles['Normal']))
-    contenido.append(Paragraph(f"Destino: {destino if destino else '________'}", styles['Normal']))
+     contenido.append(Paragraph(f"<b>Fecha:</b> {fecha}", styles['Normal']))
+     contenido.append(Paragraph(f"<b>Cliente:</b> {cliente if cliente else '________________________'}", styles['Normal']))
+     contenido.append(Paragraph(f"<b>Destino:</b> {destino if destino else '________________________'}", styles['Normal']))
 
-    data = [
+     contenido.append(Spacer(1, 15))
+
+    # ==============================
+    # ESTILO TABLAS
+    # ==============================
+    estilo = TableStyle([
+     ('BACKGROUND', (0,0), (-1,0), colors.orange),
+     ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+     ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+     ('ALIGN', (0,0), (-1,-1), 'CENTER')
+ ])
+
+    ancho_tabla = [300, 200]
+
+    # ==============================
+    # KPI PRINCIPALES
+    # ==============================
+     contenido.append(Paragraph("<b>Resumen logístico</b>", styles['Heading2']))
+
+    data_kpi = [
+     ["Concepto", "Valor"],
+     ["Total cajas", sum([p['cantidad'] for p in productos])],
+     ["Total pallets", total_pallets],
+     ["Peso total (kg)", round(total_peso,2)],
+     ["Volumen total (m³)", round(total_vol,2)],
+ ]
+
+    tabla_kpi = Table(data_kpi, colWidths=ancho_tabla)
+    tabla_kpi.setStyle(estilo)
+
+    contenido.append(tabla_kpi)
+    contenido.append(Spacer(1, 15))
+
+    # ==============================
+    # CONTENEDORES
+    # ==============================
+    contenido.append(Paragraph("<b>Capacidad de contenedores</b>", styles['Heading2']))
+ 
+     data_cont = [
+      ["Concepto", "Valor"],
+      ["Contenedores 20ft", c20],
+      ["Ocupación 20ft", f"{round(occ20*100,1)}%"],
+      ["Contenedores 40ft", c40],
+      ["Ocupación 40ft", f"{round(occ40*100,1)}%"],
+      ["Apilación de pallets", "Permitida" if doble else "No permitida por altura"],
+   ]
+
+      tabla_cont = Table(data_cont, colWidths=ancho_tabla)
+      tabla_cont.setStyle(estilo)
+
+      contenido.append(tabla_cont)
+      contenido.append(Spacer(1, 15))
+
+    # ==============================
+    # DETALLE POR CAJA
+    # ==============================
+     contenido.append(Paragraph("<b>Detalle por tipo de caja</b>", styles['Heading2']))
+
+     for i, (p, r) in enumerate(resultados):
+
+     contenido.append(Spacer(1, 10))
+     contenido.append(Paragraph(f"<b>Tipo de caja {i+1}</b>", styles['Normal']))
+
+     data_det = [
         ["Concepto", "Valor"],
-        ["Total pallets", total_pallets],
-        ["Volumen", round(total_vol,2)],
-        ["Peso", round(total_peso,2)],
+        ["Cajas por pallet", r['cajas_pallet']],
+        ["Cantidad total cajas", p['cantidad']],
+        ["Pallets requeridos", r['pallets']],
+        ["Peso por pallet (kg)", round(r['peso_pallet'],2)],
+        ["Volumen por pallet (m³)", round(r['vol_pallet'],2)],
     ]
 
-    tabla = Table(data)
-    tabla.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.orange),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black)
-    ]))
+    tabla_det = Table(data_det, colWidths=ancho_tabla)
+    tabla_det.setStyle(estilo)
 
-    contenido.append(tabla)
+    contenido.append(tabla_det)
 
-    doc.build(contenido)
-    pdf = buffer.getvalue()
+    contenido.append(Spacer(1, 15))
 
-    st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
+    # ==============================
+    # RECOMENDACIÓN
+    # ==============================
+      contenido.append(Paragraph("<b>Recomendación logística</b>", styles['Heading2']))
+      contenido.append(Spacer(1, 5))
 
-    st.markdown("---")
+      contenido.append(Paragraph(recomendacion, styles['Normal']))
+
+    # ==============================
+    # GENERAR PDF
+    # ==============================
+     doc.build(contenido)
+
+      pdf = buffer.getvalue()
+      buffer.close()
+
+      st.download_button(
+        "📄 Exportar PDF",
+       pdf,
+      "cotizacion_logistica_ruufe.pdf",
+       mime="application/pdf"
+    )
 
     # ==============================
     # BOTON LIMPIAR (CORRECTO)
