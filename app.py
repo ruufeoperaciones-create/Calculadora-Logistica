@@ -298,7 +298,7 @@ if calcular:
     # ==============================
     contenido.append(Paragraph("<b>Capacidad de contenedores</b>", styles['Heading2']))
  
-     data_cont = [
+    data_cont = [
       ["Concepto", "Valor"],
       ["Contenedores 20ft", c20],
       ["Ocupación 20ft", f"{round(occ20*100,1)}%"],
@@ -307,8 +307,8 @@ if calcular:
       ["Apilación de pallets", "Permitida" if doble else "No permitida por altura"],
    ]
 
-      tabla_cont = Table(data_cont, colWidths=ancho_tabla)
-      tabla_cont.setStyle(estilo)
+    tabla_cont = Table(data_cont, colWidths=ancho_tabla)
+    tabla_cont.setStyle(estilo)
 
     contenido.append(tabla_cont)
     contenido.append(Spacer(1, 15))
@@ -323,7 +323,7 @@ if calcular:
     contenido.append(Spacer(1, 10))
     contenido.append(Paragraph(f"<b>Tipo de caja {i+1}</b>", styles['Normal']))
 
-     data_det = [
+    data_det = [
         ["Concepto", "Valor"],
         ["Cajas por pallet", r['cajas_pallet']],
         ["Cantidad total cajas", p['cantidad']],
@@ -350,13 +350,13 @@ if calcular:
     # ==============================
     # GENERAR PDF
     # ==============================
-     doc.build(contenido)
+    doc.build(contenido)
 
-      pdf = buffer.getvalue()
-      buffer.close()
+    pdf = buffer.getvalue()
+    buffer.close()
 
-      st.download_button(
-        "📄 Exportar PDF",
+    st.download_button(
+     "📄 Exportar PDF",
        pdf,
       "cotizacion_logistica_ruufe.pdf",
        mime="application/pdf"
