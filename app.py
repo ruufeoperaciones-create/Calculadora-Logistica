@@ -195,6 +195,38 @@ if calcular:
         st.error("📦 Apilación de pallets: No permitida por límite de altura")
 
     # ==============================
+# RECOMENDACIÓN INTELIGENTE
+# ==============================
+
+st.header("🧠 RECOMENDACIÓN LOGÍSTICA")
+
+ocupacion_20 = occ20 * 100
+ocupacion_40 = occ40 * 100
+
+if total_pallets <= 4:
+    recomendacion = "📦 Envío muy pequeño: se recomienda consolidación (LCL) para optimizar costos logísticos."
+
+elif ocupacion_20 >= 80 and c20 == 1:
+    recomendacion = "🚢 Alta eficiencia: se recomienda contenedor de 20 pies (FCL), con excelente nivel de ocupación."
+
+elif ocupacion_40 >= 80 and c40 == 1:
+    recomendacion = "🚢 Alta eficiencia: se recomienda contenedor de 40 pies (FCL), maximizando capacidad."
+
+elif ocupacion_40 > ocupacion_20:
+    recomendacion = "⚖️ Mejor desempeño en contenedor de 40 pies: mayor eficiencia volumétrica."
+
+elif ocupacion_20 > ocupacion_40:
+    recomendacion = "⚖️ Mejor desempeño en contenedor de 20 pies: opción más eficiente para este embarque."
+
+elif ocupacion_40 < 50:
+    recomendacion = "📉 Baja ocupación: se recomienda consolidar carga o evaluar envío parcial."
+
+else:
+    recomendacion = "📦 Envío viable, se recomienda evaluar costos entre 20ft y 40ft según tarifa naviera."
+
+st.success(recomendacion)
+
+    # ==============================
     # PDF
     # ==============================
     buffer = io.BytesIO()
