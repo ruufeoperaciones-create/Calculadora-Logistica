@@ -256,11 +256,11 @@ if calcular:
     # ==============================
     fecha = datetime.now().strftime("%d/%m/%Y")
 
-     contenido.append(Paragraph(f"<b>Fecha:</b> {fecha}", styles['Normal']))
-     contenido.append(Paragraph(f"<b>Cliente:</b> {cliente if cliente else '________________________'}", styles['Normal']))
-     contenido.append(Paragraph(f"<b>Destino:</b> {destino if destino else '________________________'}", styles['Normal']))
+    contenido.append(Paragraph(f"<b>Fecha:</b> {fecha}", styles['Normal']))
+    contenido.append(Paragraph(f"<b>Cliente:</b> {cliente if cliente else '________________________'}", styles['Normal']))
+    contenido.append(Paragraph(f"<b>Destino:</b> {destino if destino else '________________________'}", styles['Normal']))
 
-     contenido.append(Spacer(1, 15))
+    contenido.append(Spacer(1, 15))
 
     # ==============================
     # ESTILO TABLAS
