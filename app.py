@@ -316,7 +316,7 @@ if calcular:
     # ==============================
     # DETALLE POR CAJA
     # ==============================
-     contenido.append(Paragraph("<b>Detalle por tipo de caja</b>", styles['Heading2']))
+    contenido.append(Paragraph("<b>Detalle por tipo de caja</b>", styles['Heading2']))
 
      for i, (p, r) in enumerate(resultados):
 
