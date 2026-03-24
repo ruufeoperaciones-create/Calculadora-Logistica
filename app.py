@@ -342,10 +342,10 @@ if calcular:
     # ==============================
     # RECOMENDACIÓN
     # ==============================
-      contenido.append(Paragraph("<b>Recomendación logística</b>", styles['Heading2']))
-      contenido.append(Spacer(1, 5))
+    contenido.append(Paragraph("<b>Recomendación logística</b>", styles['Heading2']))
+    contenido.append(Spacer(1, 5))
 
-      contenido.append(Paragraph(recomendacion, styles['Normal']))
+    contenido.append(Paragraph(recomendacion, styles['Normal']))
 
     # ==============================
     # GENERAR PDF
