@@ -6,8 +6,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
-if "reset" not in st.session_state:
-    st.session_state.reset = False
+# ==============================
+# CONTROL RESET
+# ==============================
+if "reset_flag" not in st.session_state:
+    st.session_state.reset_flag = False
 
 # ==============================
 # CONFIG
@@ -110,26 +113,15 @@ try:
 except:
     pass
 
+# ==============================
 # CLIENTE
+# ==============================
 st.subheader("🧾 Información cliente (opcional)")
-cliente = st.text_input(
-    "Nombre del cliente",
-    value="" if st.session_state.reset else st.session_state.get("cliente", "")
-)
-st.session_state.cliente = cliente
-destino = st.text_input(
-    "País destino",
-    value="" if st.session_state.reset else st.session_state.get("destino", "")
-)
-st.session_state.destino = destino
 
-num_productos = st.number_input(
-    "Número de tipos de cajas",
-    min_value=1,
-    step=1,
-    value=1 if st.session_state.reset else st.session_state.get("num_productos", 1)
-)
-st.session_state.num_productos = num_productos
+cliente = st.text_input("Nombre del cliente", key="cliente")
+destino = st.text_input("País destino", key="destino")
+
+num_productos = st.number_input("Número de tipos de cajas", min_value=1, step=1, key="num_productos")
 
 productos = []
 
@@ -138,32 +130,12 @@ for i in range(int(num_productos)):
 
     col1, col2, col3 = st.columns(3)
 
-    largo = col1.number_input(
-    f"Largo cm {i}",
-    key=f"l{i}",
-    value=0 if st.session_state.reset else st.session_state.get(f"l{i}", 0)
-)
-    ancho = col2.number_input(
-    f"Ancho cm {i}",
-    key=f"a{i}",
-    value=0 if st.session_state.reset else st.session_state.get(f"a{i}", 0)
-)
-    alto = col3.number_input(
-    f"Alto cm {i}",
-    key=f"h{i}",
-    value=0 if st.session_state.reset else st.session_state.get(f"h{i}", 0)
-)
+    largo = col1.number_input(f"Largo cm {i}", key=f"l{i}")
+    ancho = col2.number_input(f"Ancho cm {i}", key=f"a{i}")
+    alto = col3.number_input(f"Alto cm {i}", key=f"h{i}")
 
-    peso = st.number_input(
-    f"Peso kg {i}",
-    key=f"p{i}",
-    value=0 if st.session_state.reset else st.session_state.get(f"p{i}", 0)
-)
-    cantidad = st.number_input(
-    f"Cantidad {i}",
-    key=f"c{i}",
-    value=0 if st.session_state.reset else st.session_state.get(f"c{i}", 0)
-)
+    peso = st.number_input(f"Peso kg {i}", key=f"p{i}")
+    cantidad = st.number_input(f"Cantidad {i}", key=f"c{i}")
 
     productos.append({
         'largo': largo,
@@ -174,15 +146,10 @@ for i in range(int(num_productos)):
     })
 
 # ==============================
-# BOTON CALCULAR
+# CALCULAR
 # ==============================
-
 calcular = st.button("Calcular")
 
-
-# ==============================
-# CALCULO
-# ==============================
 if calcular:
 
     total_vol = 0
@@ -212,9 +179,6 @@ if calcular:
 
     c20, c40, occ20, occ40, doble = calcular_contenedores(total_pallets, total_vol)
 
-    # ==============================
-    # REPORTE FINAL
-    # ==============================
     st.header("🚢 REPORTE LOGÍSTICO FINAL")
 
     st.write(f"📦 Total cajas: {sum([p['cantidad'] for p in productos])}")
@@ -231,18 +195,6 @@ if calcular:
         st.error("📦 Apilación de pallets: No permitida por límite de altura")
 
     # ==============================
-    # RECOMENDACION
-    # ==============================
-    if total_pallets <= 5:
-        recomendacion = "Consolidar carga (LCL)"
-    elif occ40 < 0.6:
-        recomendacion = "Baja ocupación, considerar consolidación"
-    else:
-        recomendacion = "Envío FCL óptimo"
-
-    st.write(recomendacion)
-
-    # ==============================
     # PDF
     # ==============================
     buffer = io.BytesIO()
@@ -251,14 +203,7 @@ if calcular:
 
     contenido = []
 
-    try:
-        contenido.append(Image("logo.png", width=140, height=60))
-    except:
-        pass
-
-    contenido.append(Spacer(1, 10))
     contenido.append(Paragraph("<b>COTIZACIÓN DE EMBARQUE LOGÍSTICO</b>", styles['Title']))
-    contenido.append(Spacer(1, 10))
 
     fecha = datetime.now().strftime("%d/%m/%Y")
 
@@ -266,17 +211,14 @@ if calcular:
     contenido.append(Paragraph(f"Cliente: {cliente if cliente else '________'}", styles['Normal']))
     contenido.append(Paragraph(f"Destino: {destino if destino else '________'}", styles['Normal']))
 
-    contenido.append(Spacer(1, 15))
-
     data = [
         ["Concepto", "Valor"],
         ["Total pallets", total_pallets],
         ["Volumen", round(total_vol,2)],
         ["Peso", round(total_peso,2)],
-        ["Ocupación 40ft", f"{round(occ40*100,1)}%"]
     ]
 
-    tabla = Table(data, colWidths=[260, 140])
+    tabla = Table(data)
     tabla.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.orange),
         ('TEXTCOLOR', (0,0), (-1,0), colors.white),
@@ -289,18 +231,13 @@ if calcular:
     pdf = buffer.getvalue()
 
     st.download_button("📄 Exportar PDF", pdf, "cotizacion.pdf")
+
     st.markdown("---")
 
-st.markdown("---")
-
-if st.button("🔄 Limpiar y nueva simulación"):
-    keys_to_delete = []
-
-    for key in st.session_state.keys():
-        if key.startswith(("l", "a", "h", "p", "c")) or key in ["cliente", "destino", "num_productos"]:
-            keys_to_delete.append(key)
-
-    for key in keys_to_delete:
-        del st.session_state[key]
-
-    st.rerun()
+    # ==============================
+    # BOTON LIMPIAR (CORRECTO)
+    # ==============================
+    if st.button("🔄 Limpiar y nueva simulación"):
+        for key in st.session_state.keys():
+            st.session_state[key] = 0 if isinstance(st.session_state[key], (int, float)) else ""
+        st.rerun()
