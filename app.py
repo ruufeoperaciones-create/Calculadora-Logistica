@@ -277,7 +277,7 @@ if calcular:
     # ==============================
     # KPI PRINCIPALES
     # ==============================
-     contenido.append(Paragraph("<b>Resumen logístico</b>", styles['Heading2']))
+    contenido.append(Paragraph("<b>Resumen logístico</b>", styles['Heading2']))
 
     data_kpi = [
      ["Concepto", "Valor"],
@@ -310,8 +310,8 @@ if calcular:
       tabla_cont = Table(data_cont, colWidths=ancho_tabla)
       tabla_cont.setStyle(estilo)
 
-      contenido.append(tabla_cont)
-      contenido.append(Spacer(1, 15))
+    contenido.append(tabla_cont)
+    contenido.append(Spacer(1, 15))
 
     # ==============================
     # DETALLE POR CAJA
@@ -320,8 +320,8 @@ if calcular:
 
      for i, (p, r) in enumerate(resultados):
 
-     contenido.append(Spacer(1, 10))
-     contenido.append(Paragraph(f"<b>Tipo de caja {i+1}</b>", styles['Normal']))
+    contenido.append(Spacer(1, 10))
+    contenido.append(Paragraph(f"<b>Tipo de caja {i+1}</b>", styles['Normal']))
 
      data_det = [
         ["Concepto", "Valor"],
